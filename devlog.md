@@ -1,7 +1,7 @@
 ## Introducing the team
 
 ### Engine Lead: Bryce
-Bryce is leading our technical architecture, researching engine options, and guiding how we structure our codebase. He’ll help the team get up to speed with whatever platform we choose and aim to shield us from unnecessary complexity.
+Bryce is leading our technical architecture, researching engine options, and guiding how we structure our codebase. He’ll help the team get up to speed with whatever platform we choose and aim to shield us from unnecessary complexity. He’ll also define and maintain the project’s core subsystems—like rendering, input, and asset pipelines—so the rest of the team can build features on a stable and consistent foundation.
 
 ### Design Lead: Shawn
 Shawn is driving the creative vision — shaping the game’s look, feel, and player experience. He’ll be prototyping visual ideas and helping align our code and assets around a cohesive design language.
