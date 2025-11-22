@@ -17,7 +17,7 @@ export class GLContext {
     
     this.gl = gl;
     this.configure();
-    window.addEventListener('resize', () => this.resize());
+    self.addEventListener('resize', () => this.resize());
     this.resize();
   }
     private configure() {

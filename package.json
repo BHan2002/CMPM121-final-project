@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "eslint .",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "start": "deno run --allow-read --allow-write --allow-net src/main.ts"
   },
   "repository": {
     "type": "git",

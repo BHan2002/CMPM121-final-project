@@ -1,6 +1,6 @@
 // src/main.ts
-import { GLContext } from "./gl/GLContext";
-import { Engine } from "./core/Engine";
+import { GLContext } from "./gl/GLContext.ts";
+import { Engine } from "./core/Engine.ts";
 
 function bootstrap() {
   const canvas = document.getElementById("game") as HTMLCanvasElement | null;
@@ -10,11 +10,11 @@ function bootstrap() {
 
   const glctx = new GLContext(canvas);
 
-  const engine = new Engine((dt: number) => {
-    // For now: just clear. We'll add scene update & render later.
+  const engine = new Engine((deltaTime: number) => {
+    
     glctx.clear();
 
-    // console.log(dt); // you can log dt to see the loop working
+    //console.log(deltaTime); // log deltaTime for demonstration purposes
   });
 
   engine.start();
