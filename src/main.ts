@@ -4,8 +4,8 @@ import { Engine } from "./core/Engine.ts";
 import { Shader } from "./gl/Shader.ts";
 import { mat4, vec3 } from "gl-matrix";
 import { Input } from "./core/Input.ts";
-import { Time } from "./core/Time.ts";
-import { SceneManager } from "./core/SceneManager.ts";
+import { Time } from "./core/Time.ts"; // (not used yet)
+import { SceneManager } from "./core/SceneManager.ts"; // (not used yet)
 
 // Initialize Input system
 
