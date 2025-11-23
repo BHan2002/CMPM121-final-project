@@ -1,11 +1,11 @@
 // Simple event bus implementation
 /* example usage:
-  
+
     Events.on("my-event", (data) => {
     console.log("Event received:", data);
     });
 
-    or 
+    or
 
     // somewhere in gameplay
     Events.emit("player:death", { reason: "lava" });
