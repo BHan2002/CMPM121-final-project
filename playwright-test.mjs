@@ -10,13 +10,13 @@ import { chromium } from "playwright";
 
   // Mini Movement Script
   const holdTime = 2000;
-  await page.keyboard.down('ArrowDown');
-  await page.keyboard.down('ArrowRight');
+  await page.keyboard.down("ArrowDown");
+  await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(holdTime);
-  await page.keyboard.up('ArrowDown');
-  await page.keyboard.up('ArrowRight');
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.up("ArrowRight");
 
-  console.log('Finished holding keys.');
+  console.log("Finished holding keys.");
 
   // Take a screenshot
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
