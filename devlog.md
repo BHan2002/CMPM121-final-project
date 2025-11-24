@@ -45,7 +45,8 @@ We’re not trying to build anything super technical—our focus is more on the 
 Right now, the hardest part is probably going to be scope and timing. We don’t have every detail locked down yet, and since we’re a new team, we’re still figuring out how to work together smoothly. We’re using GitHub to help, but we know it’ll take some practice to get everyone on the same page.
 
 As for learning, we’re hoping to get more comfortable with DOM manipulation in TypeScript—building things in code instead of just writing HTML. And honestly, just learning how to collaborate better as a team is a big part of why we’re doing this.
-==============================================================================================================================================================================
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## F1 Devlog
 
