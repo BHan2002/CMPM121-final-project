@@ -127,105 +127,31 @@ function bootstrap() {
   // A unit cube centered at origin, we’ll scale/position via model matrix.
   const cubePositions = [
     // front
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
+    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     // back
-    -0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
+    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
   ];
 
   const cubeColors = [
     // front (red-ish)
-    1,
-    0,
-    0,
-    1,
-    0.3,
-    0.3,
-    1,
-    0.3,
-    0.3,
-    1,
-    0,
-    0,
+    1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
     // back (orange-ish)
-    1,
-    0.6,
-    0.2,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.6,
-    0.2,
+    1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
   ];
 
   const cubeIndices = [
     // front
-    0,
-    1,
-    2,
-    0,
-    2,
-    3,
+    0, 1, 2, 0, 2, 3,
     // right
-    1,
-    5,
-    6,
-    1,
-    6,
-    2,
+    1, 5, 6, 1, 6, 2,
     // back
-    5,
-    4,
-    7,
-    5,
-    7,
-    6,
+    5, 4, 7, 5, 7, 6,
     // left
-    4,
-    0,
-    3,
-    4,
-    3,
-    7,
+    4, 0, 3, 4, 3, 7,
     // top
-    3,
-    2,
-    6,
-    3,
-    6,
-    7,
+    3, 2, 6, 3, 6, 7,
     // bottom
-    4,
-    5,
-    1,
-    4,
-    1,
-    0,
+    4, 5, 1, 4, 1, 0,
   ];
 
   const character = createDrawable(
@@ -245,65 +171,23 @@ function bootstrap() {
   // --------- Geometry: win condition (small pyramid) ---------
   const winconPositions = [
     // base
-    -0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    0.3,
-    -0.3,
-    0,
-    0.3,
+    -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
     // apex
-    0,
-    0.6,
-    0,
+    0, 0.6, 0,
   ];
 
   const winconColors = [
     // base (yellow)
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
+    1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
     // apex (bright yellow)
-    1,
-    1,
-    0.5,
+    1, 1, 0.5,
   ];
 
   const winconIndices = [
     // base
-    0,
-    1,
-    2,
-    0,
-    2,
-    3,
+    0, 1, 2, 0, 2, 3,
     // sides
-    0,
-    4,
-    1,
-    1,
-    4,
-    2,
-    2,
-    4,
-    3,
-    3,
-    4,
-    0,
+    0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0,
   ];
 
   const wincon = createDrawable(
@@ -321,105 +205,31 @@ function bootstrap() {
   // --------- Geometry: collectibles (small cubes) ---------
   const collectiblePositions = [
     // front
-    -0.2,
-    -0.2,
-    0.2,
-    0.2,
-    -0.2,
-    0.2,
-    0.2,
-    0.2,
-    0.2,
-    -0.2,
-    0.2,
-    0.2,
+    -0.2, -0.2, 0.2, 0.2, -0.2, 0.2, 0.2, 0.2, 0.2, -0.2, 0.2, 0.2,
     // back
-    -0.2,
-    -0.2,
-    -0.2,
-    0.2,
-    -0.2,
-    -0.2,
-    0.2,
-    0.2,
-    -0.2,
-    -0.2,
-    0.2,
-    -0.2,
+    -0.2, -0.2, -0.2, 0.2, -0.2, -0.2, 0.2, 0.2, -0.2, -0.2, 0.2, -0.2,
   ];
 
   const collectibleColors = [
     // front (cyan)
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
+    0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
     // back (cyan)
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
+    0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
   ];
 
   const collectibleIndices = [
     // front
-    0,
-    1,
-    2,
-    0,
-    2,
-    3,
+    0, 1, 2, 0, 2, 3,
     // right
-    1,
-    5,
-    6,
-    1,
-    6,
-    2,
+    1, 5, 6, 1, 6, 2,
     // back
-    5,
-    4,
-    7,
-    5,
-    7,
-    6,
+    5, 4, 7, 5, 7, 6,
     // left
-    4,
-    0,
-    3,
-    4,
-    3,
-    7,
+    4, 0, 3, 4, 3, 7,
     // top
-    3,
-    2,
-    6,
-    3,
-    6,
-    7,
+    3, 2, 6, 3, 6, 7,
     // bottom
-    4,
-    5,
-    1,
-    4,
-    1,
-    0,
+    4, 5, 1, 4, 1, 0,
   ];
 
   // Create 3 collectibles at different positions
@@ -611,8 +421,8 @@ function bootstrap() {
     }
 
     // --- Check for win condition collision if all collectibles are collected ---
-    const allCollectiblesCollected = collectible1Collected &&
-      collectible2Collected && collectible3Collected;
+    const allCollectiblesCollected =
+      collectible1Collected && collectible2Collected && collectible3Collected;
 
     if (!winconCollected && allCollectiblesCollected) {
       const dist = vec3.distance(playerPos, winconPos);
