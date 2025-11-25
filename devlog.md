@@ -61,9 +61,15 @@ As for learning, we’re hoping to get more comfortable with DOM manipulation in
 
 ### 4. Present a playable prototype with a simple physics-based puzzle.
 
+The prototype is playable (the player can use the arrow keys to move their character), and the current version of the puzzle is more of a demonstration of the mechanics, navigating the player character to pick up the collectables before reaching the pyramid.
+
 ### 5. Allow the player to exert control over the simulation to succeed or fail at the puzzle.
 
+The player exerts control over the outcome of the puzzle, as player input is the only way to progress toward pikcing up the required collectables and reaching the pyramid.
+
 ### 6. Detect success or failure and report it back to the player using the game's graphics.
+
+The win condition requires the player to pick up all the collectables before collecting the pyramid, which informs the player that they have won and also shows this feedback graphiclly by collecting the pyramid. 
 
 ### 7. Include before-commit automation that helps developers.
 
@@ -74,3 +80,5 @@ The codebase includes basic checks for both linting and autoformatting using ESL
 For post-push automation, the project includes an automated deployment workflow and a basic Playwright setup. GitHub Pages automatically rebuilds and deploys the project whenever changes are pushed, keeping the live version consistently updated. In addition, we currently have Playwright scripts that can generate screenshots and run simple interaction sequences, demonstrating that our codebase supports automated post-push checks even if these scripts remain minimal at this stage.
 
 ## Reflection
+
+I think the biggest change we plan on making in the future is how we distribute work. The roles we have picked out are helpful, but there is a lot to do outside of those areas, and they often required a volunteer to step up to make sure they got done. Something we are considering is breaking down everything that needs to be done before the next milestone right away and tasking them based on the our roles and intuitive order the tasks should be done in. Otherwise, I think our team is on track.
