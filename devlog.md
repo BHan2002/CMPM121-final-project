@@ -50,26 +50,40 @@ As for learning, we’re hoping to get more comfortable with DOM manipulation in
 
 ## F1 Devlog
 
-
 ## How we satisfied the software requirements
 
-### 1. Build using a platform that does not already provide support for 3D rendering and physics simulation.
+### 1. Build using a platform that does not already provide support for 3D rendering and physics simulation
 
-### 2. Use a third-party 3D rendering library.
+For this project, We intentionally chose to develop on the web platform using raw WebGL 2.0, which provides only low-level GPU access and no built-in 3D rendering pipeline or physics simulation.  This decision forced us to understand the complete 3D pipeline—buffers, VAOs, shaders, matrix transforms, and camera math—without relying on a higher-level engine.
 
-### 3. Use a third-party physics simulation library.
+### 2. Use a third-party 3D rendering library
 
-### 4. Present a playable prototype with a simple physics-based puzzle.
+While the rendering is done with WebGL directly, the project uses gl-matrix, a widely used third-party math and matrix library for JavaScript/TypeScript 3D applications.
 
-### 5. Allow the player to exert control over the simulation to succeed or fail at the puzzle.
+gl-matrix provides fast, SIMD-optimized functions for:
 
-### 6. Detect success or failure and report it back to the player using the game's graphics.
+* mat4 transformation matrices
+* vec3 vector operations
+* matrix composition (translation, rotation, scale)
+* camera calculations (e.g., mat4.lookAt, mat4.perspective)
 
-### 7. Include before-commit automation that helps developers.
+Because WebGL does not provide any matrix utilities out of the box, gl-matrix serves as the third-party rendering support library required by the assignment.
+
+### 3. Use a third-party physics simulation library
+
+Right now we are using manual collisions but plan on implementing Oimo.js which handles collision detection, rigid body behavior, and movement resolution.It fits the scope of the project because our current world is made of cubes, grids, and simple geometric obstacles—exactly the domain Oimo.js excels at.
+
+### 4. Present a playable prototype with a simple physics-based puzzle
+
+### 5. Allow the player to exert control over the simulation to succeed or fail at the puzzle
+
+### 6. Detect success or failure and report it back to the player using the game's graphics
+
+### 7. Include before-commit automation that helps developers
 
 The codebase includes basic checks for both linting and autoformatting using ESLint and Prettier, respectively. The package.json defines the scripts that run these checks, and a Husky pre-commit hook ensures they execute automatically before any commit. This setup blocks commits that fail the checks, satisfying the requirement for before-commit automation.
 
-### 8. Include post-push automation that helps developers.
+### 8. Include post-push automation that helps developers
 
 For post-push automation, the project includes an automated deployment workflow and a basic Playwright setup. GitHub Pages automatically rebuilds and deploys the project whenever changes are pushed, keeping the live version consistently updated. In addition, we currently have Playwright scripts that can generate screenshots and run simple interaction sequences, demonstrating that our codebase supports automated post-push checks even if these scripts remain minimal at this stage.
 
