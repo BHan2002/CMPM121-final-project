@@ -5,9 +5,34 @@ import { Shader } from "./gl/Shader.ts";
 import { mat4, vec3 } from "gl-matrix";
 import { Input } from "./core/Input.ts";
 
-// If using global OIMO (via <script> in HTML):
-// deno-lint-ignore no-explicit-any
-declare const OIMO: any;
+// OIMO Setup
+declare const OIMO: {
+  World: new (config: {
+    timestep: number;
+    iterations: number;
+    broadphase: number;
+    worldscale: number;
+    random: boolean;
+    info: boolean;
+    gravity: [number, number, number];
+  }) => OIMOWorld;
+};
+
+interface OIMOWorld {
+  addRigidBody(body: OIMOBody): void;
+  step(): void;
+}
+
+interface OIMOPhysicsWorld {
+  add(config: unknown): OIMOBody;
+}
+
+interface OIMOBody {
+  getLinearVelocity?(): { x: number; y: number; z: number };
+  setLinearVelocity?(v: { x: number; y: number; z: number }): void;
+  getPosition(): { x: number; y: number; z: number };
+  linearVelocity: { x: number; y: number; z: number }; // fallback
+}
 
 // =======================
 // Shader sources
@@ -59,8 +84,7 @@ interface Renderable {
 }
 
 interface PhysicsBody {
-  // deno-lint-ignore no-explicit-any
-  body: any; // OIMO.Body
+  body: OIMOBody;
 }
 
 interface Collectible {
@@ -200,10 +224,9 @@ function createDrawable(
 
 // Create an Oimo box body
 function createBoxBody(opts: {
-  // deno-lint-ignore no-explicit-any
-  world: any;
-  size: [number, number, number]; // full extents [sx, sy, sz]
-  pos: [number, number, number]; // center pos [x, y, z]
+  world: OIMOPhysicsWorld;
+  size: [number, number, number];
+  pos: [number, number, number];
   move: boolean;
   density?: number;
 }) {
@@ -246,8 +269,7 @@ interface SceneBuildResult {
 
 function buildScene(
   _gl: WebGL2RenderingContext,
-  // deno-lint-ignore no-explicit-any
-  world: any,
+  world: OIMOPhysicsWorld,
   ecs: ECS,
   meshes: SharedMeshes,
   config: SceneConfig,
@@ -404,41 +426,159 @@ function bootstrap() {
   // Cube geometry shared by player/platforms/collectibles
   const cubePositions = [
     // front
-    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    0.5,
+    -0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    -0.5,
+    0.5,
+    0.5,
     // back
-    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
+    -0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    -0.5,
   ];
   const cubeIndices = [
-    0, 1, 2, 0, 2, 3, // front
-    1, 5, 6, 1, 6, 2, // right
-    5, 4, 7, 5, 7, 6, // back
-    4, 0, 3, 4, 3, 7, // left
-    3, 2, 6, 3, 6, 7, // top
-    4, 5, 1, 4, 1, 0, // bottom
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // front
+    1,
+    5,
+    6,
+    1,
+    6,
+    2, // right
+    5,
+    4,
+    7,
+    5,
+    7,
+    6, // back
+    4,
+    0,
+    3,
+    4,
+    3,
+    7, // left
+    3,
+    2,
+    6,
+    3,
+    6,
+    7, // top
+    4,
+    5,
+    1,
+    4,
+    1,
+    0, // bottom
   ];
 
   // Player colors
   const playerCubeColors = [
     // front (red-ish)
-    1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
+    1,
+    0,
+    0,
+    1,
+    0.3,
+    0.3,
+    1,
+    0.3,
+    0.3,
+    1,
+    0,
+    0,
     // back (orange-ish)
-    1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
+    1,
+    0.6,
+    0.2,
+    1,
+    0.8,
+    0.3,
+    1,
+    0.8,
+    0.3,
+    1,
+    0.6,
+    0.2,
   ];
 
   // Collectible colors (cyan)
   const collectibleCubeColors = [
     // front
-    0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
     // back
-    0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
   ];
 
   // Platform colors (gray)
   const platformCubeColors = [
     // front
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
     // back
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
   ];
 
   const playerCube = createDrawable(
@@ -466,19 +606,61 @@ function bootstrap() {
   // Win condition pyramid
   const winconPositions = [
     // base
-    -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
+    -0.3,
+    0,
+    -0.3,
+    0.3,
+    0,
+    -0.3,
+    0.3,
+    0,
+    0.3,
+    -0.3,
+    0,
+    0.3,
     // apex
-    0, 0.6, 0,
+    0,
+    0.6,
+    0,
   ];
   const winconColors = [
     // base (yellow)
-    1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
     // apex
-    1, 1, 0.5,
+    1,
+    1,
+    0.5,
   ];
   const winconIndices = [
-    0, 1, 2, 0, 2, 3, // base
-    0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0, // sides
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // base
+    0,
+    4,
+    1,
+    1,
+    4,
+    2,
+    2,
+    4,
+    3,
+    3,
+    4,
+    0, // sides
   ];
   const winPyramid = createDrawable(
     gl,
@@ -535,7 +717,7 @@ function bootstrap() {
   // Build the scene from config
   const { playerEntity } = buildScene(
     gl,
-    world,
+    world as unknown as OIMOPhysicsWorld,
     ecs,
     meshes,
     testScene,
@@ -572,7 +754,6 @@ function bootstrap() {
   // =======================
   // Game loop (Engine)
   // =======================
-  let angle = 0;
   let physicsAccumulator = 0;
   const fixedTimeStep = 1 / 60;
   const moveSpeed = 5;
@@ -588,17 +769,22 @@ function bootstrap() {
 
     // ---------- INPUT → Physics (movement & jump) ----------
     const body = playerPhys.body;
-    const vel = 
-      typeof body.getLinearVelocity === "function"
-        ? body.getLinearVelocity()
-        : body.linearVelocity;
+    const vel = typeof body.getLinearVelocity === "function"
+      ? body.getLinearVelocity()
+      : body.linearVelocity;
     let vx = 0;
     let vz = 0;
 
-    if (Input.isKeyDown("ArrowUp")) vz -= moveSpeed;
-    if (Input.isKeyDown("ArrowDown")) vz += moveSpeed;
-    if (Input.isKeyDown("ArrowLeft")) vx -= moveSpeed;
-    if (Input.isKeyDown("ArrowRight")) vx += moveSpeed;
+    if (Input.isKeyDown("ArrowUp") || Input.isKeyDown("KeyW")) vz -= moveSpeed;
+    if (Input.isKeyDown("ArrowDown") || Input.isKeyDown("KeyS")) {
+      vz += moveSpeed;
+    }
+    if (Input.isKeyDown("ArrowLeft") || Input.isKeyDown("KeyA")) {
+      vx -= moveSpeed;
+    }
+    if (Input.isKeyDown("ArrowRight") || Input.isKeyDown("KeyD")) {
+      vx += moveSpeed;
+    }
 
     vel.x = vx;
     vel.z = vz;
@@ -610,8 +796,8 @@ function bootstrap() {
     if (typeof body.setLinearVelocity === "function") {
       body.setLinearVelocity(vel);
     } else {
-       body.linearVelocity = vel;
-    } 
+      body.linearVelocity = vel;
+    }
 
     // ---------- Fixed-step physics ----------
     physicsAccumulator += dt;
@@ -640,10 +826,9 @@ function bootstrap() {
     playerGrounded = false;
     if (playerTransform && playerPhys) {
       const body = playerPhys.body;
-      const vel2 =
-        typeof body.getLinearVelocity === "function"
-          ? body.getLinearVelocity()
-          : body.linearVelocity;
+      const vel2 = typeof body.getLinearVelocity === "function"
+        ? body.getLinearVelocity()
+        : body.linearVelocity;
       const velY = vel2.y;
 
       for (const [, platform] of ecs.platforms) {
@@ -658,9 +843,7 @@ function bootstrap() {
       }
     }
 
-
     // ---------- Rotate collectibles & win condition ----------
-    angle += dt;
 
     for (const [e, coll] of ecs.collectibles) {
       if (coll.collected) continue;
