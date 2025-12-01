@@ -4,12 +4,12 @@ import { Engine } from "./core/Engine.ts";
 import { Shader } from "./gl/Shader.ts";
 import { mat4, vec3 } from "gl-matrix";
 import { Input } from "./core/Input.ts";
-// import { Time } from "./core/Time.ts"; // (not used yet)
-// import { SceneManager } from "./core/SceneManager.ts"; // (not used yet)
-// (I'm commenting these out until we need them so the code linter is happy)
+
+// If using global OIMO (UMD script included in HTML):
+// deno-lint-ignore no-explicit-any
+declare const OIMO: any;
 
 // Initialize Input system
-
 Input.init();
 
 const VERT_SRC = `#version 300 es
@@ -44,20 +44,26 @@ interface Drawable {
   mode: number;
 }
 
+// Simple pairing of physics + graphics for objects that need both
+interface PhysicsDrawable {
+  // deno-lint-ignore no-explicit-any
+  body: any;       // OIMO.Body
+  drawable: Drawable;
+}
+
 // Helper to create VAO from interleaved position/color data
 function createDrawable(
   gl: WebGL2RenderingContext,
   positions: number[],
   colors: number[],
   indices: number[],
-  mode: number, // <--- NEW
+  mode: number,
 ): Drawable {
   const vao = gl.createVertexArray();
   if (!vao) throw new Error("Failed to create VAO");
 
   gl.bindVertexArray(vao);
 
-  // Interleave position and color into a single buffer
   const vertexCount = positions.length / 3;
   const stride = 6; // 3 pos + 3 color
   const vertexData = new Float32Array(vertexCount * stride);
@@ -105,8 +111,30 @@ function createDrawable(
     vao,
     indexCount: indices.length,
     modelMatrix: mat4.create(),
-    mode, // <--- NEW
+    mode,
   };
+}
+
+// Helper to create a box body in Oimo (used for player, floor, platforms)
+function createBoxBody(opts: {
+  // deno-lint-ignore no-explicit-any
+  world: any;
+  size: [number, number, number]; // [sx, sy, sz]
+  pos: [number, number, number];  // [x, y, z]
+  move: boolean;                  // true = dynamic, false = static
+  density?: number;
+}) {
+  const { world, size, pos, move, density = 1 } = opts;
+
+  // This matches the classic Oimo.js API (world.add)
+  return world.add({
+    type: "box",
+    size,
+    pos,
+    rot: [0, 0, 0],
+    move,
+    density,
+  });
 }
 
 function bootstrap() {
@@ -123,38 +151,40 @@ function bootstrap() {
   const uMVP = shader.getUniformLocation("uMVP");
   if (!uMVP) throw new Error("Failed to get uMVP uniform");
 
-  // --------- Geometry: cube (character placeholder) ---------
-  // A unit cube centered at origin, we’ll scale/position via model matrix.
+  // ============= PHYSICS WORLD (Oimo) =============
+  const world = new OIMO.World({
+    timestep: 1 / 60,
+    iterations: 8,
+    broadphase: 2,
+    worldscale: 1,
+    random: true,
+    info: false,
+    gravity: [0, -9.8, 0],
+  });
+
+  // ============= GEOMETRY: PLAYER (cube) ==========
   const cubePositions = [
     // front
     -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     // back
     -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
   ];
-
   const cubeColors = [
     // front (red-ish)
     1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
     // back (orange-ish)
     1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
   ];
-
   const cubeIndices = [
-    // front
-    0, 1, 2, 0, 2, 3,
-    // right
-    1, 5, 6, 1, 6, 2,
-    // back
-    5, 4, 7, 5, 7, 6,
-    // left
-    4, 0, 3, 4, 3, 7,
-    // top
-    3, 2, 6, 3, 6, 7,
-    // bottom
-    4, 5, 1, 4, 1, 0,
+    0, 1, 2, 0, 2, 3, // front
+    1, 5, 6, 1, 6, 2, // right
+    5, 4, 7, 5, 7, 6, // back
+    4, 0, 3, 4, 3, 7, // left
+    3, 2, 6, 3, 6, 7, // top
+    4, 5, 1, 4, 1, 0, // bottom
   ];
 
-  const character = createDrawable(
+  const characterDrawable = createDrawable(
     gl,
     cubePositions,
     cubeColors,
@@ -162,32 +192,39 @@ function bootstrap() {
     gl.TRIANGLES,
   );
 
-  // Player position in world space
+  // Player physics body (1x1x1 box, centered at y=0.5 on floor)
+  const playerBody = createBoxBody({
+    world,
+    size: [1, 1, 1],
+    pos: [0, 0.5, 0],
+    move: true,
+    density: 1,
+  });
+
+  const player: PhysicsDrawable = {
+    body: playerBody,
+    drawable: characterDrawable,
+  };
+
+  // Player position used for camera & simple collision distances
   const playerPos = vec3.fromValues(0, 0.5, 0);
 
-  // Position the character above the floor at the origin
-  mat4.fromTranslation(character.modelMatrix, playerPos);
-
-  // --------- Geometry: win condition (small pyramid) ---------
+  // ============= GEOMETRY: WIN CONDITION (pyramid) ==========
   const winconPositions = [
     // base
     -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
     // apex
     0, 0.6, 0,
   ];
-
   const winconColors = [
     // base (yellow)
     1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
     // apex (bright yellow)
     1, 1, 0.5,
   ];
-
   const winconIndices = [
-    // base
-    0, 1, 2, 0, 2, 3,
-    // sides
-    0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0,
+    0, 1, 2, 0, 2, 3, // base
+    0, 4, 1, 1, 4, 2, 2, 4, 3, 3, 4, 0, // sides
   ];
 
   const wincon = createDrawable(
@@ -197,112 +234,76 @@ function bootstrap() {
     winconIndices,
     gl.TRIANGLES,
   );
-  const winconPos = vec3.fromValues(3, 0.3, -2); // position in world
+  const winconPos = vec3.fromValues(3, 0.3, -2);
   mat4.fromTranslation(wincon.modelMatrix, winconPos);
-
   let winconCollected = false;
 
-  // --------- Geometry: collectibles (small cubes) ---------
+  // ============= GEOMETRY: COLLECTIBLES (small cubes) ==========
   const collectiblePositions = [
     // front
     -0.2, -0.2, 0.2, 0.2, -0.2, 0.2, 0.2, 0.2, 0.2, -0.2, 0.2, 0.2,
     // back
     -0.2, -0.2, -0.2, 0.2, -0.2, -0.2, 0.2, 0.2, -0.2, -0.2, 0.2, -0.2,
   ];
-
   const collectibleColors = [
     // front (cyan)
     0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
-    // back (cyan)
+    // back
     0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
   ];
+  const collectibleIndices = cubeIndices.slice();
 
-  const collectibleIndices = [
-    // front
-    0, 1, 2, 0, 2, 3,
-    // right
-    1, 5, 6, 1, 6, 2,
-    // back
-    5, 4, 7, 5, 7, 6,
-    // left
-    4, 0, 3, 4, 3, 7,
-    // top
-    3, 2, 6, 3, 6, 7,
-    // bottom
-    4, 5, 1, 4, 1, 0,
-  ];
+  function makeCollectible(pos: vec3) {
+    const d = createDrawable(
+      gl,
+      collectiblePositions,
+      collectibleColors,
+      collectibleIndices,
+      gl.TRIANGLES,
+    );
+    mat4.fromTranslation(d.modelMatrix, pos);
+    return d;
+  }
 
-  // Create 3 collectibles at different positions
-  const collectible1 = createDrawable(
-    gl,
-    collectiblePositions,
-    collectibleColors,
-    collectibleIndices,
-    gl.TRIANGLES,
-  );
   const collectible1Pos = vec3.fromValues(-3, 0.3, 2);
-  mat4.fromTranslation(collectible1.modelMatrix, collectible1Pos);
-
-  const collectible2 = createDrawable(
-    gl,
-    collectiblePositions,
-    collectibleColors,
-    collectibleIndices,
-    gl.TRIANGLES,
-  );
   const collectible2Pos = vec3.fromValues(4, 0.3, 3);
-  mat4.fromTranslation(collectible2.modelMatrix, collectible2Pos);
-
-  const collectible3 = createDrawable(
-    gl,
-    collectiblePositions,
-    collectibleColors,
-    collectibleIndices,
-    gl.TRIANGLES,
-  );
   const collectible3Pos = vec3.fromValues(-2, 0.3, -4);
-  mat4.fromTranslation(collectible3.modelMatrix, collectible3Pos);
+
+  const collectible1 = makeCollectible(collectible1Pos);
+  const collectible2 = makeCollectible(collectible2Pos);
+  const collectible3 = makeCollectible(collectible3Pos);
 
   let collectible1Collected = false;
   let collectible2Collected = false;
   let collectible3Collected = false;
 
-  // --------- Geometry: floor grid (lines) ---------
-  const gridSize = 10; // extent from center
-  const divisions = 20; // number of cells per side
+  // ============= GEOMETRY: FLOOR GRID (render only) ==========
+  const gridSize = 10;
+  const divisions = 20;
   const floorY = 0;
 
   const gridPositions: number[] = [];
   const gridColors: number[] = [];
   const gridIndices: number[] = [];
 
-  // Build lines parallel to X (constant Z)
+  // lines parallel to X
   for (let i = 0; i <= divisions; i++) {
     const t = -gridSize + (2 * gridSize * i) / divisions;
-    // line from (-gridSize, floorY, t) to (gridSize, floorY, t)
     const baseIndex = gridPositions.length / 3;
-
     gridPositions.push(-gridSize, floorY, t, gridSize, floorY, t);
-
-    // light gray lines
     gridColors.push(0.8, 0.8, 0.8, 0.8, 0.8, 0.8);
-
     gridIndices.push(baseIndex, baseIndex + 1);
   }
-
-  // Build lines parallel to Z (constant X)
+  // lines parallel to Z
   for (let i = 0; i <= divisions; i++) {
     const t = -gridSize + (2 * gridSize * i) / divisions;
     const baseIndex = gridPositions.length / 3;
-
     gridPositions.push(t, floorY, -gridSize, t, floorY, gridSize);
-
     gridColors.push(0.8, 0.8, 0.8, 0.8, 0.8, 0.8);
-
     gridIndices.push(baseIndex, baseIndex + 1);
   }
 
-  const floor = createDrawable(
+  const floorDrawable = createDrawable(
     gl,
     gridPositions,
     gridColors,
@@ -310,10 +311,19 @@ function bootstrap() {
     gl.LINES,
   );
 
-  // --------- Camera setup ---------
+  // Physics floor body (big static box just under the grid)
+  const floorBody = createBoxBody({
+    world,
+    size: [gridSize * 2, 1, gridSize * 2],
+    pos: [0, -0.5, 0],
+    move: false,
+  });
+  void floorBody; // not used yet, but ready for collisions/platforms later
+
+  // ============= CAMERA SETUP =============
   const projection = mat4.create();
   const view = mat4.create();
-  const vp = mat4.create(); // view * projection
+  const vp = mat4.create();
   const mvp = mat4.create();
   const tmp = mat4.create();
 
@@ -321,7 +331,11 @@ function bootstrap() {
     const aspect = glctx.canvas.width / glctx.canvas.height;
     mat4.perspective(projection, (80 * Math.PI) / 180, aspect, 0.1, 100.0);
 
-    const eye = vec3.fromValues(5, 5, 5);
+    const eye = vec3.fromValues(
+      playerPos[0] + 5,
+      playerPos[1] + 5,
+      playerPos[2] + 5,
+    );
     const center = playerPos;
     const up = vec3.fromValues(0, 1, 0);
     mat4.lookAt(view, eye, center, up);
@@ -332,36 +346,56 @@ function bootstrap() {
   updateCamera();
 
   let angle = 0;
+  let physicsAccumulator = 0;
+  const fixedTimeStep = 1 / 60;
 
   const engine = new Engine((dt: number) => {
-    // Per-frame input housekeeping
-
     glctx.clear();
 
-    // --- Player movement with arrow keys ---
-    const speed = 3; // units per second
+    // ============= INPUT → PHYSICS (PLAYER MOVEMENT) =============
+    const moveSpeed = 5; // m/s
+    const vel = player.body.getLinearVelocity();
+    let vx = 0;
+    let vz = 0;
 
-    if (Input.isKeyDown("ArrowUp")) {
-      playerPos[2] -= speed * dt; // move forward (-Z)
+    if (Input.isKeyDown("ArrowUp")) vz -= moveSpeed;
+    if (Input.isKeyDown("ArrowDown")) vz += moveSpeed;
+    if (Input.isKeyDown("ArrowLeft")) vx -= moveSpeed;
+    if (Input.isKeyDown("ArrowRight")) vx += moveSpeed;
+
+    // Keep y-velocity (for gravity / jumping later), only control x/z
+    vel.x = vx;
+    vel.z = vz;
+    player.body.setLinearVelocity(vel);
+
+    // Example of future jump hook:
+    // if (Input.wasKeyPressed("Space") && isPlayerGrounded) {
+    //   vel.y = 6; // jump velocity
+    //   player.body.setLinearVelocity(vel);
+    // }
+
+    // ============= FIXED-STEP PHYSICS UPDATE =============
+    physicsAccumulator += dt;
+    while (physicsAccumulator >= fixedTimeStep) {
+      world.step(); // uses world.timestep internally
+      physicsAccumulator -= fixedTimeStep;
     }
-    if (Input.isKeyDown("ArrowDown")) {
-      playerPos[2] += speed * dt; // move backward (+Z)
-    }
-    if (Input.isKeyDown("ArrowLeft")) {
-      playerPos[0] -= speed * dt; // move left (-X)
-    }
-    if (Input.isKeyDown("ArrowRight")) {
-      playerPos[0] += speed * dt; // move right (+X)
-    }
+
+    // Sync player graphics from physics
+    const p = player.body.getPosition();
+    vec3.set(playerPos, p.x, p.y, p.z);
 
     // Spin the character cube a bit
     angle += dt;
 
-    // Build model matrix from updated playerPos
-    mat4.fromTranslation(character.modelMatrix, playerPos);
-    mat4.rotateY(character.modelMatrix, character.modelMatrix, angle);
+    mat4.fromTranslation(player.drawable.modelMatrix, playerPos);
+    mat4.rotateY(
+      player.drawable.modelMatrix,
+      player.drawable.modelMatrix,
+      angle,
+    );
 
-    // Spin the collectibles
+    // Spin collectibles if not collected
     if (!collectible1Collected) {
       mat4.fromTranslation(collectible1.modelMatrix, collectible1Pos);
       mat4.rotateY(
@@ -370,7 +404,6 @@ function bootstrap() {
         angle * 2,
       );
     }
-
     if (!collectible2Collected) {
       mat4.fromTranslation(collectible2.modelMatrix, collectible2Pos);
       mat4.rotateY(
@@ -379,7 +412,6 @@ function bootstrap() {
         angle * 2,
       );
     }
-
     if (!collectible3Collected) {
       mat4.fromTranslation(collectible3.modelMatrix, collectible3Pos);
       mat4.rotateY(
@@ -389,13 +421,13 @@ function bootstrap() {
       );
     }
 
-    // Spin the win condition
+    // Spin win condition
     if (!winconCollected) {
       mat4.fromTranslation(wincon.modelMatrix, winconPos);
       mat4.rotateY(wincon.modelMatrix, wincon.modelMatrix, angle * 2);
     }
 
-    // --- Check for collectible collisions ---
+    // ============= SIMPLE DISTANCE COLLISIONS (COLLECTIBLES/WIN) =============
     if (!collectible1Collected) {
       const dist = vec3.distance(playerPos, collectible1Pos);
       if (dist < 1.0) {
@@ -403,7 +435,6 @@ function bootstrap() {
         console.log("Collectible 1 found!");
       }
     }
-
     if (!collectible2Collected) {
       const dist = vec3.distance(playerPos, collectible2Pos);
       if (dist < 1.0) {
@@ -411,7 +442,6 @@ function bootstrap() {
         console.log("Collectible 2 found!");
       }
     }
-
     if (!collectible3Collected) {
       const dist = vec3.distance(playerPos, collectible3Pos);
       if (dist < 1.0) {
@@ -420,7 +450,6 @@ function bootstrap() {
       }
     }
 
-    // --- Check for win condition collision if all collectibles are collected ---
     const allCollectiblesCollected =
       collectible1Collected && collectible2Collected && collectible3Collected;
 
@@ -432,77 +461,37 @@ function bootstrap() {
       }
     }
 
-    // Camera follows the player
+    // Camera follows physics-based player position
     updateCamera();
 
     shader.use();
 
-    // draw character
-    gl.bindVertexArray(character.vao);
-    mat4.multiply(tmp, vp, character.modelMatrix);
-    mat4.copy(mvp, tmp);
-    gl.uniformMatrix4fv(uMVP, false, mvp);
-    gl.drawElements(gl.TRIANGLES, character.indexCount, gl.UNSIGNED_SHORT, 0);
+    // Small helper to draw a drawable
+    function draw(drawable: Drawable) {
+      gl.bindVertexArray(drawable.vao);
+      mat4.multiply(tmp, vp, drawable.modelMatrix);
+      mat4.copy(mvp, tmp);
+      gl.uniformMatrix4fv(uMVP, false, mvp);
+      gl.drawElements(
+        drawable.mode,
+        drawable.indexCount,
+        gl.UNSIGNED_SHORT,
+        0,
+      );
+    }
 
-    // draw floor
-    gl.bindVertexArray(floor.vao);
-    mat4.multiply(tmp, vp, floor.modelMatrix);
-    mat4.copy(mvp, tmp);
-    gl.uniformMatrix4fv(uMVP, false, mvp);
-    gl.drawElements(gl.TRIANGLES, floor.indexCount, gl.UNSIGNED_SHORT, 0);
+    // Draw everything
+    draw(player.drawable);
+    draw(floorDrawable);
+
+    if (!collectible1Collected) draw(collectible1);
+    if (!collectible2Collected) draw(collectible2);
+    if (!collectible3Collected) draw(collectible3);
+    if (!winconCollected) draw(wincon);
 
     gl.bindVertexArray(null);
 
-    // draw collectibles (if not collected)
-    if (!collectible1Collected) {
-      gl.bindVertexArray(collectible1.vao);
-      mat4.multiply(tmp, vp, collectible1.modelMatrix);
-      mat4.copy(mvp, tmp);
-      gl.uniformMatrix4fv(uMVP, false, mvp);
-      gl.drawElements(
-        gl.TRIANGLES,
-        collectible1.indexCount,
-        gl.UNSIGNED_SHORT,
-        0,
-      );
-    }
-
-    if (!collectible2Collected) {
-      gl.bindVertexArray(collectible2.vao);
-      mat4.multiply(tmp, vp, collectible2.modelMatrix);
-      mat4.copy(mvp, tmp);
-      gl.uniformMatrix4fv(uMVP, false, mvp);
-      gl.drawElements(
-        gl.TRIANGLES,
-        collectible2.indexCount,
-        gl.UNSIGNED_SHORT,
-        0,
-      );
-    }
-
-    if (!collectible3Collected) {
-      gl.bindVertexArray(collectible3.vao);
-      mat4.multiply(tmp, vp, collectible3.modelMatrix);
-      mat4.copy(mvp, tmp);
-      gl.uniformMatrix4fv(uMVP, false, mvp);
-      gl.drawElements(
-        gl.TRIANGLES,
-        collectible3.indexCount,
-        gl.UNSIGNED_SHORT,
-        0,
-      );
-    }
-
-    // draw win condition (if not collected)
-    if (!winconCollected) {
-      gl.bindVertexArray(wincon.vao);
-      mat4.multiply(tmp, vp, wincon.modelMatrix);
-      mat4.copy(mvp, tmp);
-      gl.uniformMatrix4fv(uMVP, false, mvp);
-      gl.drawElements(gl.TRIANGLES, wincon.indexCount, gl.UNSIGNED_SHORT, 0);
-    }
-
-    // If you want to use wasKeyPressed/wasKeyReleased, clear them here:
+    // Clear edge-triggered input if you use it
     Input.update();
   });
 
