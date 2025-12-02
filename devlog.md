@@ -96,3 +96,29 @@ For post-push automation, the project includes an automated deployment workflow 
 ## Reflection
 
 I think the biggest change we plan on making in the future is how we distribute work. The roles we have picked out are helpful, but there is a lot to do outside of those areas, and they often required a volunteer to step up to make sure they got done. Something we are considering is breaking down everything that needs to be done before the next milestone right away and tasking them based on the our roles and intuitive order the tasks should be done in. Otherwise, I think our team is on track.
+
+---
+
+## F2 Devlog
+
+## How we satisfied the software requirements
+
+### 1. The game uses the same 3D rendering and physics simulation identified by the team for F1 or suitable replacements that still satisfy the F1 requirements.
+
+### 2. The game must allow the player to move between scenes (e.g. rooms)
+
+### 3. The game must allow the player to select specific objects in a scene for interaction
+
+There exists two objects, a door and a key, that can each be interacted with using the 'e' key. When within range of interaction, a text prompt appears to show that the object is interactable, and in the case of doors, they can also provide feedback depending on a successful or failed interaction. The Key object can be picked up and stored in an inventory.
+
+### 4. The game maintains an inventory system allowing the player to carry objects so that what happens in one scene has an impact on what is possible in another scene.
+
+The inventory allows players to hold keys (currently only one), and they are transferable between scenes and can be used for interaction in other scenes via doors. In our current implementation, there exists a Key in the first scene which is necessary to open a Door in the second scene that blocks the path to the goal.
+
+### 5. The game contains at least one physics-based puzzle that is relevant to the player's progress in the game.
+
+### 6. The player can succeed or fail at the physics-based puzzle on the basis of their skill and/or reasoning (rather than luck).
+
+### 7. Via play, the game can reach at least one conclusive ending.
+
+## Reflection
