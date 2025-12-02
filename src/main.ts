@@ -447,31 +447,9 @@ function bootstrap() {
   // Cube geometry shared by player/platforms/collectibles
   const cubePositions = [
     // front
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
+    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     // back
-    -0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
+    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
   ];
   const cubeIndices = [
     0,
@@ -515,91 +493,25 @@ function bootstrap() {
   // Player colors
   const playerCubeColors = [
     // front (red-ish)
-    1,
-    0,
-    0,
-    1,
-    0.3,
-    0.3,
-    1,
-    0.3,
-    0.3,
-    1,
-    0,
-    0,
+    1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
     // back (orange-ish)
-    1,
-    0.6,
-    0.2,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.6,
-    0.2,
+    1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
   ];
 
   // Collectible colors (cyan)
   const collectibleCubeColors = [
     // front
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
+    0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
     // back
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
+    0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
   ];
 
   // Platform colors (gray)
   const platformCubeColors = [
     // front
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
+    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
     // back
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
+    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
   ];
 
   const playerCube = createDrawable(
@@ -627,41 +539,15 @@ function bootstrap() {
   // Win condition pyramid
   const winconPositions = [
     // base
-    -0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    0.3,
-    -0.3,
-    0,
-    0.3,
+    -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
     // apex
-    0,
-    0.6,
-    0,
+    0, 0.6, 0,
   ];
   const winconColors = [
     // base (yellow)
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
+    1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
     // apex
-    1,
-    1,
-    0.5,
+    1, 1, 0.5,
   ];
   const winconIndices = [
     0,
@@ -818,9 +704,10 @@ function bootstrap() {
 
     // ---------- INPUT → Physics (movement & jump) ----------
     const body = playerPhys.body;
-    const vel = typeof body.getLinearVelocity === "function"
-      ? body.getLinearVelocity()
-      : body.linearVelocity;
+    const vel =
+      typeof body.getLinearVelocity === "function"
+        ? body.getLinearVelocity()
+        : body.linearVelocity;
     let vx = 0;
     let vz = 0;
 
@@ -875,9 +762,10 @@ function bootstrap() {
     playerGrounded = false;
     if (playerTransform && playerPhys) {
       const body = playerPhys.body;
-      const vel2 = typeof body.getLinearVelocity === "function"
-        ? body.getLinearVelocity()
-        : body.linearVelocity;
+      const vel2 =
+        typeof body.getLinearVelocity === "function"
+          ? body.getLinearVelocity()
+          : body.linearVelocity;
       const velY = vel2.y;
 
       for (const [, platform] of ecs.platforms) {
