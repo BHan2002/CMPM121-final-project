@@ -33,6 +33,62 @@ interface OIMOBody {
   getPosition(): { x: number; y: number; z: number };
   linearVelocity: { x: number; y: number; z: number }; // fallback
 }
+
+// ======================
+// Language (i18n + l10n) Handler
+// =====================
+const button = document.createElement("button");
+button.id = "langBtn";
+button.textContent = "Language";
+document.body.appendChild(button);
+
+const translations = {
+  en: {
+    button: "Language",
+    interact: "Press 'E' to interact",
+    doorNeedKey: "You need a {color} key",
+    doorOpen: "Opened {color} door",
+    winMessage: "You Win!",
+    keyPickup: "Picked up {color} key",
+  },
+  zh: {
+    button: "语言",
+    interact: "按 'E' 进行互动",
+    doorNeedKey: "你需要一把{color}钥匙",
+    doorOpen: "打开了{color}门",
+    winMessage: "你赢了！",
+    keyPickup: "捡起了{color}钥匙",
+  },
+  ar: {
+    button: "اللغة",
+    interact: "اضغط 'E' للتفاعل",
+    doorNeedKey: "تحتاج إلى مفتاح {color}",
+    doorOpen: "تم فتح باب {color}",
+    winMessage: "لقد فزت!",
+    keyPickup: "التقطت مفتاح {color}",
+  },
+};
+
+function updateText(lang: string) {
+  const t = translations[lang as keyof typeof translations] || translations.en;
+  document.getElementById("langBtn")!.textContent = t.button;
+}
+
+// Language change button
+document.getElementById("langBtn")!.addEventListener("click", () => {
+  const html = document.documentElement;
+  if (html.lang === "en") {
+    html.lang = "zh";
+  } else if (html.lang === "zh") {
+    html.lang = "ar";
+    html.dir = "rtl";
+  } else {
+    html.lang = "en";
+    html.dir = "ltr";
+  }
+  updateText(html.lang);
+});
+
 // =======================
 // Shader sources
 // =======================
@@ -328,18 +384,22 @@ function updateTransformMatrix(t: Transform) {
 }
 
 function onInteract(obj: Key | Door) {
+  const t =
+    translations[document.documentElement.lang as keyof typeof translations] ||
+    translations.en;
+
   if ("collect" in obj) {
-    // If Key
+    // Key
     obj.collect();
     inventory.held = obj.color;
-    console.log(`Picked up ${obj.color} key`);
+    showUIMessage(t.keyPickup.replace("{color}", obj.color), 1.5);
   } else if ("open" in obj) {
-    // If Door
+    // Door
     if (inventory.held === obj.color) {
-      console.log(`Opened ${obj.color} door`);
+      showUIMessage(t.doorOpen.replace("{color}", obj.color), 1.5);
       obj.isOpen = true;
     } else {
-      console.log(`You need a ${obj.color} key to open this door`);
+      showUIMessage(t.doorNeedKey.replace("{color}", obj.color), 1.5);
     }
   }
 }
@@ -483,7 +543,10 @@ function buildScene(
       collect() {
         keyState.collected = true;
         globalState.inventory.held = keyState.color;
-        console.log(`Picked up ${keyState.color} key`);
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
+        showUIMessage(t.keyPickup.replace("{color}", keyState.color), 1.5);
         ecs.renderables.delete(keyE);
         ecs.interactables.delete(keyE);
       },
@@ -532,7 +595,10 @@ function buildScene(
       isOpen: doorState.isOpen,
       open() {
         doorState.isOpen = true;
-        console.log(`Opened ${doorState.color} door`);
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
+        showUIMessage(t.doorOpen.replace("{color}", doorState.color), 1.5);
 
         // Remove door from ECS
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -542,11 +608,14 @@ function buildScene(
         ecs.interactables.delete(doorE);
       },
       onInteract() {
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
+
         if (inventory.held === this.color && !this.isOpen) {
           this.open();
         } else if (inventory.held !== this.color) {
-          console.log(`You need a ${this.color} key to open this door`);
-          showUIMessage(`You need a ${this.color} key`, 1.5);
+          showUIMessage(t.doorNeedKey.replace("{color}", this.color), 1.5);
         }
       },
     } as Door);
@@ -1212,7 +1281,10 @@ function bootstrap() {
       const dist = vec3.distance(playerPos, t.position);
       if (dist < obj.triggerRadius) {
         if (uiTimer <= 0) {
-          showUIMessage("Press E to interact", 0.5); // short duration
+          const t = translations[
+            document.documentElement.lang as keyof typeof translations
+          ] || translations["en"];
+          showUIMessage(t.interact, 0.5);
         }
 
         // handle input
