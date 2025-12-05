@@ -159,16 +159,18 @@ class TouchController {
   }
 
   updateButtonTheme(theme: Theme) {
-    const bgColor =
-      theme === "dark" ? "rgba(100,100,100,0.7)" : "rgba(150,150,150,0.7)";
+    const bgColor = theme === "dark"
+      ? "rgba(100,100,100,0.7)"
+      : "rgba(150,150,150,0.7)";
     this.jumpButton.style.background = bgColor;
     this.upButton.style.background = bgColor;
     this.downButton.style.background = bgColor;
     this.leftButton.style.background = bgColor;
     this.rightButton.style.background = bgColor;
 
-    const interactBg =
-      theme === "dark" ? "rgba(100,100,200,0.7)" : "rgba(120,120,220,0.7)";
+    const interactBg = theme === "dark"
+      ? "rgba(100,100,200,0.7)"
+      : "rgba(120,120,220,0.7)";
     this.interactButton.style.background = interactBg;
   }
 }
@@ -385,13 +387,13 @@ interface Collectible extends ProximityTrigger {
   isCollected: boolean;
 }
 
-type KeyColor = "red" | "green" | "blue";
+type KeyColor = "🟥" | "🟦";
 interface Key extends Interactable {
   color: KeyColor;
   collect(): void;
 }
 
-type DoorColor = "red" | "green" | "blue";
+type DoorColor = "🟥" | "🟦";
 interface Door extends Interactable {
   color: DoorColor;
   isOpen: boolean;
@@ -498,7 +500,11 @@ const testScene: SceneConfig = {
     { pos: [0, 5.0, -8], size: [3, 0.5, 3] },
     { pos: [0, 7.0, -1], size: [3, 0.5, 3] },
   ],
-  keys: [{ id: "keyRed1", color: "red", pos: [0, 1, -5] }],
+  keys: [
+    { id: "keyRed1", color: "🟥", pos: [2, 1, -5] },
+    { id: "keyBlue1", color: "🟦", pos: [-2, 1, -5] },
+  ],
+
   doors: [],
 };
 
@@ -515,12 +521,12 @@ const scene2: SceneConfig = {
     { pos: [1, 2.0, -2], size: [4, 0.5, 4] },
     { pos: [-4, 4.0, -5], size: [3, 0.5, 3] },
     { pos: [3, 5.0, -9], size: [4, 0.5, 4] },
-    { pos: [-3, 8.0, -11], size: [3, 0.5, 3] },
+    { pos: [-3, 7.0, -10], size: [3, 0.5, 3] },
     { pos: [0, 9.0, -12], size: [3, 0.5, 3] },
   ],
   keys: [],
   doors: [
-    { id: "doorRed1", color: "red", pos: [-0.5, 3, -2], size: [0.5, 2.5, 3.9] },
+    { id: "doorRed1", color: "🟥", pos: [-.7, 4.5, -2], size: [0.5, 5, 3.9] },
   ],
 };
 
@@ -652,8 +658,10 @@ interface SharedMeshes {
   platformCube: Drawable;
   winPyramid: Drawable;
   floorGrid: Drawable;
-  keyTriangle: Drawable;
+  keyRedTriangle: Drawable;
+  keyBlueTriangle: Drawable;
   doorRedCube: Drawable;
+  doorBlueCube: Drawable;
 }
 
 interface SceneBuildResult {
@@ -774,7 +782,8 @@ function buildScene(
     updateTransformMatrix(t);
 
     ecs.transforms.set(keyE, t);
-    ecs.renderables.set(keyE, { drawable: meshes.keyTriangle });
+    const keyDrawable = keyState.color === "🟥" ? meshes.keyRedTriangle : meshes.keyBlueTriangle;
+ecs.renderables.set(keyE, { drawable: keyDrawable });
 
     ecs.interactables.set(keyE, {
       triggerRadius: 1.0,
@@ -782,10 +791,9 @@ function buildScene(
       collect() {
         keyState.collected = true;
         globalState.inventory.held = keyState.color;
-        const t =
-          translations[
-            document.documentElement.lang as keyof typeof translations
-          ] || translations.en;
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
         showUIMessage(t.keyPickup.replace("{color}", keyState.color), 1.5);
         ecs.renderables.delete(keyE);
         ecs.interactables.delete(keyE);
@@ -818,7 +826,8 @@ function buildScene(
     updateTransformMatrix(t);
 
     ecs.transforms.set(doorE, t);
-    ecs.renderables.set(doorE, { drawable: meshes.doorRedCube });
+    const doorDrawable = doorState.color === "🟥" ? meshes.doorRedCube : meshes.doorBlueCube;
+ecs.renderables.set(doorE, { drawable: doorDrawable });
 
     // --- Add physics ---
     const doorBody = createBoxBody({
@@ -835,10 +844,9 @@ function buildScene(
       isOpen: doorState.isOpen,
       open() {
         doorState.isOpen = true;
-        const t =
-          translations[
-            document.documentElement.lang as keyof typeof translations
-          ] || translations.en;
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
         showUIMessage(t.doorOpen.replace("{color}", doorState.color), 1.5);
 
         // Remove door from ECS
@@ -849,10 +857,9 @@ function buildScene(
         ecs.interactables.delete(doorE);
       },
       onInteract() {
-        const t =
-          translations[
-            document.documentElement.lang as keyof typeof translations
-          ] || translations.en;
+        const t = translations[
+          document.documentElement.lang as keyof typeof translations
+        ] || translations.en;
 
         if (inventory.held === this.color && !this.isOpen) {
           this.open();
@@ -1007,9 +1014,31 @@ function bootstrap() {
   // Cube geometry shared by player/platforms/collectibles
   const cubePositions = [
     // front
-    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    0.5,
+    -0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    -0.5,
+    0.5,
+    0.5,
     // back
-    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
+    -0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    0.5,
+    -0.5,
+    -0.5,
+    0.5,
+    -0.5,
   ];
   const cubeIndices = [
     0,
@@ -1053,26 +1082,92 @@ function bootstrap() {
   // Player colors
   const playerCubeColors = [
     // front (red-ish)
-    1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
+    1,
+    0,
+    0,
+    1,
+    0.3,
+    0.3,
+    1,
+    0.3,
+    0.3,
+    1,
+    0,
+    0,
     // back (orange-ish)
-    1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
+    1,
+    0.6,
+    0.2,
+    1,
+    0.8,
+    0.3,
+    1,
+    0.8,
+    0.3,
+    1,
+    0.6,
+    0.2,
   ];
 
   // Collectible colors (cyan)
   const collectibleCubeColors = [
     // front
-    0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
     // back
-    0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
+    0,
+    0.8,
+    0.8,
   ];
 
   // Interactables
 
   const doorRedColors = [
     // front
-    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
     // back
-    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
   ];
 
   const doorRedCube = createDrawable(
@@ -1083,36 +1178,203 @@ function bootstrap() {
     gl.TRIANGLES,
   );
 
+  const doorBlueColors = [
+    // front
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // back
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // left
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // right
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // top
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // bottom
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+  ];
+
+  const doorBlueCube = createDrawable(
+    gl,
+    cubePositions,
+    doorBlueColors,
+    cubeIndices,
+    gl.TRIANGLES,
+  );
+
   const keyPositions = [
+    // front
     0,
     0.5,
-    0, // top
+    0,
     -0.5,
     -0.5,
-    0, // bottom left
+    0,
     0.5,
     -0.5,
-    0, // bottom right
+    0,
+    // back
+    0,
+    0.5,
+    -0.2,
+    -0.5,
+    -0.5,
+    -0.2,
+    0.5,
+    -0.5,
+    -0.2,
   ];
 
-  const keyColors = [
-    1,
+  const keyIndices = [
     0,
-    0, // top vertex (red)
     1,
+    2, // front
+    3,
+    5,
+    4, // back
     0,
-    0, // bottom left (red)
+    3,
     1,
+    1,
+    3,
+    4, // side 1
+    1,
+    4,
+    2,
+    2,
+    4,
+    5, // side 2
+    2,
+    5,
     0,
-    0, // bottom right (red)
+    0,
+    5,
+    3, // side 3
   ];
 
-  const keyIndices = [0, 1, 2];
+  const keyRedColors = [
+    // front
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    // back
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+  ];
 
-  const keyTriangle = createDrawable(
+  const keyBlueColors = [
+    // front
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    // back
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+  ];
+
+  const keyRedTriangle = createDrawable(
     gl,
     keyPositions,
-    keyColors,
+    keyRedColors,
+    keyIndices,
+    gl.TRIANGLES,
+  );
+
+  const keyBlueTriangle = createDrawable(
+    gl,
+    keyPositions,
+    keyBlueColors,
     keyIndices,
     gl.TRIANGLES,
   );
@@ -1120,9 +1382,31 @@ function bootstrap() {
   // Platform colors (gray)
   const platformCubeColors = [
     // front
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
     // back
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
   ];
 
   const playerCube = createDrawable(
@@ -1150,15 +1434,41 @@ function bootstrap() {
   // Win condition pyramid
   const winconPositions = [
     // base
-    -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
+    -0.3,
+    0,
+    -0.3,
+    0.3,
+    0,
+    -0.3,
+    0.3,
+    0,
+    0.3,
+    -0.3,
+    0,
+    0.3,
     // apex
-    0, 0.6, 0,
+    0,
+    0.6,
+    0,
   ];
   const winconColors = [
     // base (yellow)
-    1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
     // apex
-    1, 1, 0.5,
+    1,
+    1,
+    0.5,
   ];
   const winconIndices = [
     0,
@@ -1230,8 +1540,10 @@ function bootstrap() {
     platformCube,
     winPyramid,
     floorGrid,
-    keyTriangle,
+    keyRedTriangle,
+    keyBlueTriangle,
     doorRedCube,
+    doorBlueCube,
   };
 
   world = loadScene(currentSceneIndex);
@@ -1305,7 +1617,7 @@ function bootstrap() {
   let physicsAccumulator = 0;
   const fixedTimeStep = 1 / 60;
   const moveSpeed = 5;
-  const jumpSpeed = 6;
+  const jumpSpeed = 6.5;
   const playerHalfHeight = 0.5;
   let playerGrounded = false;
 
@@ -1317,10 +1629,9 @@ function bootstrap() {
 
     // ---------- INPUT → Physics (movement & jump) ----------
     const body = playerPhys.body;
-    const vel =
-      typeof body.getLinearVelocity === "function"
-        ? body.getLinearVelocity()
-        : body.linearVelocity;
+    const vel = typeof body.getLinearVelocity === "function"
+      ? body.getLinearVelocity()
+      : body.linearVelocity;
     const touchMovement = touchController?.getMovementVector() ?? {
       x: 0,
       z: 0,
@@ -1382,10 +1693,9 @@ function bootstrap() {
     playerGrounded = false;
     if (playerTransform && playerPhys) {
       const body = playerPhys.body;
-      const vel2 =
-        typeof body.getLinearVelocity === "function"
-          ? body.getLinearVelocity()
-          : body.linearVelocity;
+      const vel2 = typeof body.getLinearVelocity === "function"
+        ? body.getLinearVelocity()
+        : body.linearVelocity;
       const velY = vel2.y;
 
       for (const [, platform] of ecs.platforms) {
@@ -1446,10 +1756,9 @@ function bootstrap() {
       const dist = vec3.distance(playerPos, t.position);
       if (dist < obj.triggerRadius) {
         if (uiTimer <= 0) {
-          const t =
-            translations[
-              document.documentElement.lang as keyof typeof translations
-            ] || translations["en"];
+          const t = translations[
+            document.documentElement.lang as keyof typeof translations
+          ] || translations["en"];
           showUIMessage(t.interact, 0.5);
         }
 
@@ -1476,7 +1785,10 @@ function bootstrap() {
             world = loadScene(currentSceneIndex);
             physicsAccumulator = 0;
           } else {
-            alert("You Win!");
+            const t = translations[
+              document.documentElement.lang as keyof typeof translations
+            ] || translations.en;
+            alert(t.winMessage);
           }
         }
       }
