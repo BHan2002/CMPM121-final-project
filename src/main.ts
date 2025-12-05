@@ -159,18 +159,16 @@ class TouchController {
   }
 
   updateButtonTheme(theme: Theme) {
-    const bgColor = theme === "dark"
-      ? "rgba(100,100,100,0.7)"
-      : "rgba(150,150,150,0.7)";
+    const bgColor =
+      theme === "dark" ? "rgba(100,100,100,0.7)" : "rgba(150,150,150,0.7)";
     this.jumpButton.style.background = bgColor;
     this.upButton.style.background = bgColor;
     this.downButton.style.background = bgColor;
     this.leftButton.style.background = bgColor;
     this.rightButton.style.background = bgColor;
 
-    const interactBg = theme === "dark"
-      ? "rgba(100,100,200,0.7)"
-      : "rgba(120,120,220,0.7)";
+    const interactBg =
+      theme === "dark" ? "rgba(100,100,200,0.7)" : "rgba(120,120,220,0.7)";
     this.interactButton.style.background = interactBg;
   }
 }
@@ -784,9 +782,10 @@ function buildScene(
       collect() {
         keyState.collected = true;
         globalState.inventory.held = keyState.color;
-        const t = translations[
-          document.documentElement.lang as keyof typeof translations
-        ] || translations.en;
+        const t =
+          translations[
+            document.documentElement.lang as keyof typeof translations
+          ] || translations.en;
         showUIMessage(t.keyPickup.replace("{color}", keyState.color), 1.5);
         ecs.renderables.delete(keyE);
         ecs.interactables.delete(keyE);
@@ -836,9 +835,10 @@ function buildScene(
       isOpen: doorState.isOpen,
       open() {
         doorState.isOpen = true;
-        const t = translations[
-          document.documentElement.lang as keyof typeof translations
-        ] || translations.en;
+        const t =
+          translations[
+            document.documentElement.lang as keyof typeof translations
+          ] || translations.en;
         showUIMessage(t.doorOpen.replace("{color}", doorState.color), 1.5);
 
         // Remove door from ECS
@@ -849,9 +849,10 @@ function buildScene(
         ecs.interactables.delete(doorE);
       },
       onInteract() {
-        const t = translations[
-          document.documentElement.lang as keyof typeof translations
-        ] || translations.en;
+        const t =
+          translations[
+            document.documentElement.lang as keyof typeof translations
+          ] || translations.en;
 
         if (inventory.held === this.color && !this.isOpen) {
           this.open();
@@ -1006,31 +1007,9 @@ function bootstrap() {
   // Cube geometry shared by player/platforms/collectibles
   const cubePositions = [
     // front
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    -0.5,
-    0.5,
-    0.5,
+    -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     // back
-    -0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    0.5,
-    -0.5,
-    -0.5,
-    0.5,
-    -0.5,
+    -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5,
   ];
   const cubeIndices = [
     0,
@@ -1074,92 +1053,26 @@ function bootstrap() {
   // Player colors
   const playerCubeColors = [
     // front (red-ish)
-    1,
-    0,
-    0,
-    1,
-    0.3,
-    0.3,
-    1,
-    0.3,
-    0.3,
-    1,
-    0,
-    0,
+    1, 0, 0, 1, 0.3, 0.3, 1, 0.3, 0.3, 1, 0, 0,
     // back (orange-ish)
-    1,
-    0.6,
-    0.2,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.8,
-    0.3,
-    1,
-    0.6,
-    0.2,
+    1, 0.6, 0.2, 1, 0.8, 0.3, 1, 0.8, 0.3, 1, 0.6, 0.2,
   ];
 
   // Collectible colors (cyan)
   const collectibleCubeColors = [
     // front
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
+    0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1,
     // back
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
-    0,
-    0.8,
-    0.8,
+    0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8, 0, 0.8, 0.8,
   ];
 
   // Interactables
 
   const doorRedColors = [
     // front
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
+    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
     // back
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    1,
-    0,
-    0,
+    1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
   ];
 
   const doorRedCube = createDrawable(
@@ -1207,31 +1120,9 @@ function bootstrap() {
   // Platform colors (gray)
   const platformCubeColors = [
     // front
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
+    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
     // back
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
-    0.5,
+    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
   ];
 
   const playerCube = createDrawable(
@@ -1259,41 +1150,15 @@ function bootstrap() {
   // Win condition pyramid
   const winconPositions = [
     // base
-    -0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    -0.3,
-    0.3,
-    0,
-    0.3,
-    -0.3,
-    0,
-    0.3,
+    -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 0, 0.3, -0.3, 0, 0.3,
     // apex
-    0,
-    0.6,
-    0,
+    0, 0.6, 0,
   ];
   const winconColors = [
     // base (yellow)
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    1,
-    0,
+    1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0,
     // apex
-    1,
-    1,
-    0.5,
+    1, 1, 0.5,
   ];
   const winconIndices = [
     0,
@@ -1452,11 +1317,14 @@ function bootstrap() {
 
     // ---------- INPUT → Physics (movement & jump) ----------
     const body = playerPhys.body;
-    const vel = typeof body.getLinearVelocity === "function"
-      ? body.getLinearVelocity()
-      : body.linearVelocity;
-    const touchMovement = touchController?.getMovementVector() ??
-      { x: 0, z: 0 };
+    const vel =
+      typeof body.getLinearVelocity === "function"
+        ? body.getLinearVelocity()
+        : body.linearVelocity;
+    const touchMovement = touchController?.getMovementVector() ?? {
+      x: 0,
+      z: 0,
+    };
     let vx = 0;
     let vz = 0;
 
@@ -1514,9 +1382,10 @@ function bootstrap() {
     playerGrounded = false;
     if (playerTransform && playerPhys) {
       const body = playerPhys.body;
-      const vel2 = typeof body.getLinearVelocity === "function"
-        ? body.getLinearVelocity()
-        : body.linearVelocity;
+      const vel2 =
+        typeof body.getLinearVelocity === "function"
+          ? body.getLinearVelocity()
+          : body.linearVelocity;
       const velY = vel2.y;
 
       for (const [, platform] of ecs.platforms) {
@@ -1577,9 +1446,10 @@ function bootstrap() {
       const dist = vec3.distance(playerPos, t.position);
       if (dist < obj.triggerRadius) {
         if (uiTimer <= 0) {
-          const t = translations[
-            document.documentElement.lang as keyof typeof translations
-          ] || translations["en"];
+          const t =
+            translations[
+              document.documentElement.lang as keyof typeof translations
+            ] || translations["en"];
           showUIMessage(t.interact, 0.5);
         }
 
