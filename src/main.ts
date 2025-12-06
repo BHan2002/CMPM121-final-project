@@ -5,6 +5,174 @@ import { Shader } from "./gl/Shader.ts";
 import { mat4, vec3 } from "gl-matrix";
 import { Input } from "./core/Input.ts";
 
+// Touch Screen Controller Class
+class TouchController {
+  private canvas: HTMLCanvasElement;
+  private jumpButton: HTMLButtonElement;
+  private interactButton: HTMLButtonElement;
+  private upButton: HTMLButtonElement;
+  private downButton: HTMLButtonElement;
+  private leftButton: HTMLButtonElement;
+  private rightButton: HTMLButtonElement;
+
+  private activeDirections = {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+  };
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+
+    // Create directional buttons
+    this.upButton = this.createButton("↑", "9rem", "4rem", "none");
+    this.downButton = this.createButton("↓", "3rem", "4rem", "none");
+    this.leftButton = this.createButton("←", "6rem", "1rem", "none");
+    this.rightButton = this.createButton("→", "6rem", "7rem", "none");
+
+    // Create jump button
+    this.jumpButton = document.createElement("button");
+    this.jumpButton.textContent = "↑";
+    this.jumpButton.style.cssText = `
+      position: fixed;
+      bottom: 6rem;
+      right: 2rem;
+      width: 70px;
+      height: 70px;
+      font-size: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(100,100,100,0.7);
+      color: white;
+      z-index: 1000;
+      touch-action: none;
+    `;
+    document.body.appendChild(this.jumpButton);
+
+    // Create interact button
+    this.interactButton = document.createElement("button");
+    this.interactButton.textContent = "E";
+    this.interactButton.style.cssText = `
+      position: fixed;
+      bottom: 6rem;
+      right: 6rem;
+      width: 70px;
+      height: 70px;
+      font-size: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(100,100,200,0.7);
+      color: white;
+      z-index: 1000;
+      touch-action: none;
+    `;
+    document.body.appendChild(this.interactButton);
+
+    this.setupListeners();
+  }
+
+  private createButton(
+    text: string,
+    bottom: string,
+    left: string,
+    transform: string,
+  ): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.style.cssText = `
+      position: fixed;
+      bottom: ${bottom};
+      left: ${left};
+      transform: ${transform};
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(100,100,100,0.7);
+      color: white;
+      z-index: 1000;
+      touch-action: none;
+    `;
+    document.body.appendChild(button);
+    return button;
+  }
+
+  private setupListeners() {
+    // Directional buttons
+    this.setupDirectionButton(this.upButton, "up");
+    this.setupDirectionButton(this.downButton, "down");
+    this.setupDirectionButton(this.leftButton, "left");
+    this.setupDirectionButton(this.rightButton, "right");
+
+    // Jump button
+    this.jumpButton.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      Input.simulateKeyPress("Space");
+    });
+
+    // Interact button
+    this.interactButton.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      Input.simulateKeyPress("KeyE");
+    });
+  }
+
+  private setupDirectionButton(
+    button: HTMLButtonElement,
+    direction: "up" | "down" | "left" | "right",
+  ) {
+    button.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      this.activeDirections[direction] = true;
+    });
+
+    button.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      this.activeDirections[direction] = false;
+    });
+
+    button.addEventListener("touchcancel", (e) => {
+      e.preventDefault();
+      this.activeDirections[direction] = false;
+    });
+  }
+
+  getMovementVector(): { x: number; z: number } {
+    let x = 0;
+    let z = 0;
+
+    if (this.activeDirections.up) z -= 1;
+    if (this.activeDirections.down) z += 1;
+    if (this.activeDirections.left) x -= 1;
+    if (this.activeDirections.right) x += 1;
+
+    // Normalize diagonal movement
+    if (x !== 0 && z !== 0) {
+      const length = Math.sqrt(x * x + z * z);
+      x /= length;
+      z /= length;
+    }
+
+    return { x, z };
+  }
+
+  updateButtonTheme(theme: Theme) {
+    const bgColor =
+      theme === "dark" ? "rgba(100,100,100,0.7)" : "rgba(150,150,150,0.7)";
+    this.jumpButton.style.background = bgColor;
+    this.upButton.style.background = bgColor;
+    this.downButton.style.background = bgColor;
+    this.leftButton.style.background = bgColor;
+    this.rightButton.style.background = bgColor;
+
+    const interactBg =
+      theme === "dark" ? "rgba(100,100,200,0.7)" : "rgba(120,120,220,0.7)";
+    this.interactButton.style.background = interactBg;
+  }
+}
+
 // OIMO Setup
 declare const OIMO: {
   World: new (config: {
@@ -70,6 +238,8 @@ function applyButtonTheme(theme: Theme) {
 let currentButtonTheme: Theme = getPreferredTheme();
 applyButtonTheme(currentButtonTheme);
 
+let touchController: TouchController | null = null;
+
 // React to OS/browser theme changes
 if (window.matchMedia) {
   const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -77,12 +247,18 @@ if (window.matchMedia) {
   const handleThemeChange = (ev: MediaQueryListEvent | MediaQueryList) => {
     currentButtonTheme = ev.matches ? "dark" : "light";
     applyButtonTheme(currentButtonTheme);
+    if (touchController) {
+      touchController.updateButtonTheme(currentButtonTheme);
+    }
   };
 
   // sync and listen
   handleThemeChange(mq);
   if (mq.addEventListener) {
-    mq.addEventListener("change", handleThemeChange as (e: MediaQueryListEvent) => void);
+    mq.addEventListener(
+      "change",
+      handleThemeChange as (e: MediaQueryListEvent) => void,
+    );
   } else {
     // older browsers
     mq.addListener(handleThemeChange as (e: MediaQueryListEvent) => void);
@@ -211,13 +387,13 @@ interface Collectible extends ProximityTrigger {
   isCollected: boolean;
 }
 
-type KeyColor = "red" | "green" | "blue";
+type KeyColor = "🟥" | "🟦";
 interface Key extends Interactable {
   color: KeyColor;
   collect(): void;
 }
 
-type DoorColor = "red" | "green" | "blue";
+type DoorColor = "🟥" | "🟦";
 interface Door extends Interactable {
   color: DoorColor;
   isOpen: boolean;
@@ -268,12 +444,14 @@ const inventory: { held: KeyColor | null } = {
 type Theme = "light" | "dark";
 
 function getPreferredTheme(): Theme {
-  if (globalThis.matchMedia && globalThis.matchMedia("(prefers-color-scheme: dark)").matches) {
+  if (
+    globalThis.matchMedia &&
+    globalThis.matchMedia("(prefers-color-scheme: dark)").matches
+  ) {
     return "dark";
   }
   return "light";
 }
-
 
 // =======================
 // ECS Registry
@@ -334,7 +512,11 @@ const testScene: SceneConfig = {
     { pos: [0, 5.0, -8], size: [3, 0.5, 3] },
     { pos: [0, 7.0, -1], size: [3, 0.5, 3] },
   ],
-  keys: [{ id: "keyRed1", color: "red", pos: [0, 1, -5] }],
+  keys: [
+    { id: "keyRed1", color: "🟥", pos: [2, 1, -5] },
+    { id: "keyBlue1", color: "🟦", pos: [-2, 1, -5] },
+  ],
+
   doors: [],
 };
 
@@ -351,12 +533,12 @@ const scene2: SceneConfig = {
     { pos: [1, 2.0, -2], size: [4, 0.5, 4] },
     { pos: [-4, 4.0, -5], size: [3, 0.5, 3] },
     { pos: [3, 5.0, -9], size: [4, 0.5, 4] },
-    { pos: [-3, 8.0, -11], size: [3, 0.5, 3] },
+    { pos: [-3, 7.0, -10], size: [3, 0.5, 3] },
     { pos: [0, 9.0, -12], size: [3, 0.5, 3] },
   ],
   keys: [],
   doors: [
-    { id: "doorRed1", color: "red", pos: [-0.5, 3, -2], size: [0.5, 2.5, 3.9] },
+    { id: "doorRed1", color: "🟥", pos: [-0.7, 4.5, -2], size: [0.5, 5, 3.9] },
   ],
 };
 
@@ -488,8 +670,10 @@ interface SharedMeshes {
   platformCube: Drawable;
   winPyramid: Drawable;
   floorGrid: Drawable;
-  keyTriangle: Drawable;
+  keyRedTriangle: Drawable;
+  keyBlueTriangle: Drawable;
   doorRedCube: Drawable;
+  doorBlueCube: Drawable;
 }
 
 interface SceneBuildResult {
@@ -629,7 +813,9 @@ function buildScene(
     updateTransformMatrix(t);
 
     ecs.transforms.set(keyE, t);
-    ecs.renderables.set(keyE, { drawable: meshes.keyTriangle });
+    const keyDrawable =
+      keyState.color === "🟥" ? meshes.keyRedTriangle : meshes.keyBlueTriangle;
+    ecs.renderables.set(keyE, { drawable: keyDrawable });
 
     ecs.interactables.set(keyE, {
       triggerRadius: 1.0,
@@ -673,7 +859,9 @@ function buildScene(
     updateTransformMatrix(t);
 
     ecs.transforms.set(doorE, t);
-    ecs.renderables.set(doorE, { drawable: meshes.doorRedCube });
+    const doorDrawable =
+      doorState.color === "🟥" ? meshes.doorRedCube : meshes.doorBlueCube;
+    ecs.renderables.set(doorE, { drawable: doorDrawable });
 
     // --- Add physics ---
     const doorBody = createBoxBody({
@@ -762,8 +950,16 @@ function showUIMessage(msg: string, duration = 0.5) {
 // =======================
 function bootstrap() {
   Input.init();
-
   const canvas = document.getElementById("game") as HTMLCanvasElement | null;
+  if (!canvas) {
+    throw new Error("Canvas element with id 'game' not found");
+  }
+
+  // Prevent default touch behaviors on canvas
+  canvas.style.touchAction = "none";
+  canvas.style.userSelect = "none";
+
+  touchController = new TouchController(canvas);
   const uiCanvas = document.getElementById("ui") as HTMLCanvasElement;
   const uiCtx = uiCanvas.getContext("2d")!;
   
@@ -905,10 +1101,6 @@ function newGame() {
     }
   }
 
-  if (!canvas) {
-    throw new Error("Canvas element with id 'game' not found");
-  }
-
   const glctx = new GLContext(canvas);
   const gl = glctx.gl;
 
@@ -922,34 +1114,34 @@ function newGame() {
   let currentTheme: Theme = getPreferredTheme();
 
   function getAmbientThemeColor(theme: Theme): [number, number, number] {
-    return theme === "dark" 
-    ? [0.6, 0.6, 0.7]   // Dark theme
-    : [1.0, 1.0, 1.0];  // Light theme
+    return theme === "dark"
+      ? [0.6, 0.6, 0.7] // Dark theme
+      : [1.0, 1.0, 1.0]; // Light theme
   }
 
   function getClearThemeColor(theme: Theme): [number, number, number, number] {
-    return theme === "dark" 
-    ? [0.1, 0.1, 0.15, 1.0]  // Dark theme
-    : [0.9, 0.9, 1.0, 1.0];  // Light theme
+    return theme === "dark"
+      ? [0.1, 0.1, 0.15, 1.0] // Dark theme
+      : [0.9, 0.9, 1.0, 1.0]; // Light theme
   }
 
   function getUIForegroundColor(theme: Theme): string {
     return theme === "dark"
-    ? "#ffffff"   // Dark theme
-    : "#111111";  // Light theme
+      ? "#ffffff" // Dark theme
+      : "#111111"; // Light theme
   }
 
   let uiTextColor = getUIForegroundColor(currentTheme);
 
   // React to system theme changes in real-time
-  if (globalThis.matchMedia) { 
+  if (globalThis.matchMedia) {
     const mq = globalThis.matchMedia("(prefers-color-scheme: dark)");
     const themeChangeHandler = (e: MediaQueryListEvent) => {
       currentTheme = e.matches ? "dark" : "light";
       uiTextColor = getUIForegroundColor(currentTheme);
     };
 
-    // Initial sync 
+    // Initial sync
     themeChangeHandler(mq as unknown as MediaQueryListEvent);
 
     // Listen for changes
@@ -957,11 +1149,10 @@ function newGame() {
   }
 
   function clearWithTheme() {
-  const [r, g, b, a] = getClearThemeColor(currentTheme);
-  gl.clearColor(r, g, b, a);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-}
-
+    const [r, g, b, a] = getClearThemeColor(currentTheme);
+    gl.clearColor(r, g, b, a);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  }
 
   // ---------- Physics World ----------
   let world = new OIMO.World({
@@ -1059,36 +1250,89 @@ function newGame() {
     gl.TRIANGLES,
   );
 
+  const doorBlueColors = [
+    // front
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // back
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // left
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // right
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // top
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // bottom
+    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+  ];
+
+  const doorBlueCube = createDrawable(
+    gl,
+    cubePositions,
+    doorBlueColors,
+    cubeIndices,
+    gl.TRIANGLES,
+  );
+
   const keyPositions = [
-    0,
-    0.5,
-    0, // top
-    -0.5,
-    -0.5,
-    0, // bottom left
-    0.5,
-    -0.5,
-    0, // bottom right
+    // front
+    0, 0.5, 0, -0.5, -0.5, 0, 0.5, -0.5, 0,
+    // back
+    0, 0.5, -0.2, -0.5, -0.5, -0.2, 0.5, -0.5, -0.2,
   ];
 
-  const keyColors = [
-    1,
+  const keyIndices = [
     0,
-    0, // top vertex (red)
     1,
+    2, // front
+    3,
+    5,
+    4, // back
     0,
-    0, // bottom left (red)
+    3,
     1,
+    1,
+    3,
+    4, // side 1
+    1,
+    4,
+    2,
+    2,
+    4,
+    5, // side 2
+    2,
+    5,
     0,
-    0, // bottom right (red)
+    0,
+    5,
+    3, // side 3
   ];
 
-  const keyIndices = [0, 1, 2];
+  const keyRedColors = [
+    // front
+    1, 0, 0, 1, 0, 0, 1, 0, 0,
+    // back
+    1, 0, 0, 1, 0, 0, 1, 0, 0,
+  ];
 
-  const keyTriangle = createDrawable(
+  const keyBlueColors = [
+    // front
+    0, 0, 1, 0, 0, 1, 0, 0, 1,
+    // back
+    0, 0, 1, 0, 0, 1, 0, 0, 1,
+  ];
+
+  const keyRedTriangle = createDrawable(
     gl,
     keyPositions,
-    keyColors,
+    keyRedColors,
+    keyIndices,
+    gl.TRIANGLES,
+  );
+
+  const keyBlueTriangle = createDrawable(
+    gl,
+    keyPositions,
+    keyBlueColors,
     keyIndices,
     gl.TRIANGLES,
   );
@@ -1206,8 +1450,10 @@ function newGame() {
     platformCube,
     winPyramid,
     floorGrid,
-    keyTriangle,
+    keyRedTriangle,
+    keyBlueTriangle,
     doorRedCube,
+    doorBlueCube,
   };
 
   world = loadScene(currentSceneIndex);
@@ -1282,7 +1528,7 @@ function newGame() {
   let physicsAccumulator = 0;
   const fixedTimeStep = 1 / 60;
   const moveSpeed = 5;
-  const jumpSpeed = 6;
+  const jumpSpeed = 6.5;
   const playerHalfHeight = 0.5;
   let playerGrounded = false;
 
@@ -1298,6 +1544,10 @@ function newGame() {
       typeof body.getLinearVelocity === "function"
         ? body.getLinearVelocity()
         : body.linearVelocity;
+    const touchMovement = touchController?.getMovementVector() ?? {
+      x: 0,
+      z: 0,
+    };
     let vx = 0;
     let vz = 0;
 
@@ -1311,6 +1561,9 @@ function newGame() {
     if (Input.isKeyDown("ArrowRight") || Input.isKeyDown("KeyD")) {
       vx += moveSpeed;
     }
+
+    vx += touchMovement.x * moveSpeed;
+    vz += touchMovement.z * moveSpeed;
 
     vel.x = vx;
     vel.z = vz;
@@ -1448,7 +1701,11 @@ function newGame() {
             world = loadScene(currentSceneIndex);
             physicsAccumulator = 0;
           } else {
-            alert("You Win!");
+            const t =
+              translations[
+                document.documentElement.lang as keyof typeof translations
+              ] || translations.en;
+            alert(t.winMessage);
           }
         }
       }
